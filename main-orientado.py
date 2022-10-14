@@ -1,6 +1,13 @@
+from cgitb import text
 from tkinter import *
-from livro import *
-
+from tkinter.scrolledtext import ScrolledText
+import mysql.connector
+cnxn = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="",
+  database='biblioteca')
+cursor = cnxn.cursor()
 class Janelas():
     def __init__(self, base):
         self.janela = base
@@ -8,6 +15,8 @@ class Janelas():
         self.frame.pack()
         self.frame2 = Frame(self.janela)
         self.frame2.pack()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
     def menu(self):
         texto_apresentação = Label(self.frame, text="Bem-vindo a biblioteca do Luiza Marinho")
         texto_apresentação.grid(column=0, row=0, padx=100, pady=20)
@@ -31,7 +40,7 @@ class Janelas():
         botão2.grid(column=1, row=1, pady=10)
         botão3 = Button(janela_livros, text='Exibir todos os livros cadastrados atualmente', command=inicio.exibir_livros)
         botão3.grid(column=2, row=1, pady=10)
-        botão4 = Button(janela_livros,text='Retirar livro do cadastro', command=retirar_livro)
+        botão4 = Button(janela_livros,text='Retirar livro do cadastro', command=inicio.retirar_livro)
         botão4.grid(column=3, row=1, pady=10)
         janela_livros.mainloop()
     def alunos(self):
@@ -75,7 +84,7 @@ class Janelas():
         cursor.execute(f"""INSERT INTO livros
         VALUES ('{nome}','{autor}','{genero}',{quantidade},'{prateleira}',{codigo})""")
         cnxn.commit()
-        self.frame2.destroy()
+        inicio.cad_livro()
     def exibir_livros(self):
         #itens janela
         self.frame2.destroy()
@@ -111,51 +120,47 @@ class Janelas():
         livro['text'] = f"Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n"
         cad = 1
      if cad == 0:
-         livro['text'] = 'livro n encontrado'
+         livro['text'] = 'livro não encontrado'
     def retirar_livro(self):
     #itens janela
-        dell = self.frame2
-        frame = Frame(dell)
-        textoD = Label(dell, text='codigo do livro')
+        self.frame3.destroy()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
+        self.frame2.destroy()
+        self.frame2 = Frame(self.janela)
+        self.frame2.pack()
+        textoD = Label(self.frame2, text='codigo do livro')
         textoD.pack(side=TOP, anchor=N)
-        frame.pack(anchor=CENTER)
-        caixa_P = Entry(frame, width=30)
+        caixa_P = Entry(self.frame2, width=30)
         caixa_P.pack()
-        botão = Button(frame, text='pesquisar', command=lambda: inicio.pesquisa_dell(caixa_P.get(), livro, frame))
-        botão.pack()
-        livro = Listbox(frame)
+        botão = Button(self.frame2, text='pesquisar', command=lambda: inicio.pesquisa_dell(caixa_P.get()))
+        botão.pack()      
+    def pesquisa_dell(self,nome):
+        self.frame3.destroy()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
+        livro = Label(self.frame3, text='')
         livro.pack()
-    #função
-    
-    def pesquisa_dell(nome, livro,frame):
         cursor.execute(f"SELECT * FROM livros WHERE titulo='{nome}';")  
         row = cursor.fetchall() 
-        cad = 0
-        for i in row: 
-            livro.insert(1,f'Titulo: {i[0]}',f'Autor: {i[1]}',f'Gênero: {i[2]}',f'Quantia de livros: {i[3]}')
-            cad = 1 
-            quantia_existente = i[3] 
-        if cad == 0:
-         livro['text'] = 'livro n encontrado'
-        
-        #itens janela
-        frame2 = Frame(frame)
-        frame2.pack(anchor=CENTER)
-        confirmação = Label(frame, text='Quantos exemplares deseja retirar?')
-        confirmação.pack(anchor=CENTER)
-        quantidade = Spinbox(frame2, width=30, from_=0, to=quantia_existente,increment=1)
-        quantidade.pack()
-        botão= Button(frame2, text='confirmar', command=lambda: inicio.deletar(nome, quantidade.get()))
-        botão.pack()
-    def deletar(self, livro,quantidade):
+        if row == []:
+            livro['text'] = 'livro não encontrado'
+        else:
+            for i in row: 
+             livro['text'] = f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}'
+             quantia_existente = i[3]
+             frame2 = Frame(self.frame3)
+             frame2.pack(anchor=CENTER)
+             confirmação = Label(frame2, text='Quantos exemplares deseja retirar?')
+             confirmação.pack(anchor=CENTER)
+             quantidade = Spinbox(frame2, width=30, from_=0, to=quantia_existente,increment=1)
+             quantidade.pack()
+             botão= Button(frame2, text='confirmar', command=lambda: inicio.deletar(nome, quantidade.get()))
+             botão.pack() 
+    def deletar(self,livro,quantidade):
         cursor.execute(f'UPDATE livros SET quantidade=quantidade-{quantidade} WHERE titulo="{livro}"')
         cnxn.commit()
-        self.frame2.destroy()
-
-
-
-
-
+        inicio.retirar_livro()
 
 
 base = Tk()
