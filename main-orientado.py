@@ -17,6 +17,13 @@ class Janelas():
         self.frame2.pack()
         self.frame3 = Frame(self.janela)
         self.frame3.pack()
+    def destroy(self):
+        self.frame2.destroy()
+        self.frame2 = Frame(self.janela)
+        self.frame2.pack()
+        self.frame3.destroy()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
     def menu(self):
         texto_apresentação = Label(self.frame, text="Bem-vindo a biblioteca do Luiza Marinho")
         texto_apresentação.grid(column=0, row=0, padx=100, pady=20)
@@ -49,9 +56,7 @@ class Janelas():
          pass
     def cad_livro(self):
     #itens janela
-        self.frame2.destroy()
-        self.frame2 = Frame(self.janela)
-        self.frame2.pack()
+        inicio.destroy()
         textoD = Label(self.frame2, text='NOVO CADASTRO')
         textoD.grid(columnspan=2, row=0)
         texto1 = Label(self.frame2, text='Nome')
@@ -87,9 +92,7 @@ class Janelas():
         inicio.cad_livro()
     def exibir_livros(self):
         #itens janela
-        self.frame2.destroy()
-        self.frame2 = Frame(self.janela)
-        self.frame2.pack()
+        inicio.destroy()
         livros_exibir = ScrolledText(self.frame2, width=50,  height=10)
         livros_exibir.pack(side=LEFT, anchor=N, padx=10, pady=10, ipadx=10, ipady=5)
     
@@ -101,9 +104,7 @@ class Janelas():
         livros_exibir["state"] = "disabled"
     def pesquisar_livros(self):
         #itens janela
-        self.frame2.destroy()
-        self.frame2 = Frame(self.janela)
-        self.frame2.pack()
+        inicio.destroy()
         textoD = Label(self.frame2, text='Pesquisar um livro')
         textoD.pack(side=TOP, anchor=N)
         caixa_P = Entry(self.frame2, width=30)
@@ -123,12 +124,7 @@ class Janelas():
          livro['text'] = 'livro não encontrado'
     def retirar_livro(self):
     #itens janela
-        self.frame3.destroy()
-        self.frame3 = Frame(self.janela)
-        self.frame3.pack()
-        self.frame2.destroy()
-        self.frame2 = Frame(self.janela)
-        self.frame2.pack()
+        inicio.destroy()
         textoD = Label(self.frame2, text='codigo do livro')
         textoD.pack(side=TOP, anchor=N)
         caixa_P = Entry(self.frame2, width=30)
