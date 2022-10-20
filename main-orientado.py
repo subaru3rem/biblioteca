@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import mysql.connector
 cnxn = mysql.connector.connect(
-  host="localhost",
+  host="192.168.10.13",
   user="root",
   password="",
   database='biblioteca')
@@ -107,17 +107,18 @@ class Livros():
         cnxn.commit()
         livros.cad_livro()
     def exibir_livros(self):
-        #itens janela
         livros.destroy()
-        livros_exibir = ScrolledText(self.frame2, width=50,  height=10)
-        livros_exibir.pack(side=LEFT, anchor=N, padx=10, pady=10, ipadx=10, ipady=5)
-    
         #função
         cursor.execute("SELECT * FROM livros WHERE quantidade>0;") 
         rs = cursor.fetchall()
+        Column,Row = 0,0
         for i in rs:
-          livros_exibir.insert(END, f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n')  
-        livros_exibir["state"] = "disabled"
+          livros_exibir = Label(self.frame2, text=f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n')
+          livros_exibir.grid(column=Column, row=Row, padx=10)
+          Column += 1
+          if Column == 4:
+            Column = 0
+            Row += 1
     def pesquisar_livros(self):
         #itens janela
         livros.destroy()
