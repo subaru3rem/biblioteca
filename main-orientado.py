@@ -35,7 +35,8 @@ class Janelas():
         self.frame.destroy()
         livros.livros()
     def alunos(self):
-        pass
+        self.frame.destroy()
+        alunos.alunos()
     def emprestimos(self):
         pass
 class Livros():
@@ -112,11 +113,19 @@ class Livros():
         cursor.execute("SELECT * FROM livros WHERE quantidade>0;") 
         rs = cursor.fetchall()
         Column,Row = 0,0
+        scroll_bar = Scrollbar(self.frame2, orient=VERTICAL)
+        scroll_bar.grid(row=0, column=1, sticky='ns')
+        canvas = Canvas(self.frame2, yscrollcommand = scroll_bar.set)
+        canvas.grid(row=0, column=0, sticky="news")
+        scroll_bar.config( command = canvas.yview )
+        internal_frame = Frame(canvas)
+        canvas.create_window((0, 0), window=internal_frame, anchor='nw')
+        canvas.config(scrollregion=canvas.bbox("all"))
         for i in rs:
-          livros_exibir = Label(self.frame2, text=f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n')
+          livros_exibir = Label(internal_frame, text=f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n')
           livros_exibir.grid(column=Column, row=Row, padx=10)
           Column += 1
-          if Column == 4:
+          if Column == 3:
             Column = 0
             Row += 1
     def pesquisar_livros(self):
@@ -174,12 +183,72 @@ class Livros():
         cursor.execute(f'UPDATE livros SET quantidade=quantidade-{quantidade} WHERE titulo="{livro}"')
         cnxn.commit()
         livros.retirar_livro()
-
+class Alunos():
+    def __init__(self,base):
+        self.janela = base
+        self.frame = Frame(self.janela)
+        self.frame.pack()
+        self.frame2 = Frame(self.janela)
+        self.frame2.pack()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
+    def alunos(self):
+        self.frame.destroy()
+        self.frame = Frame(self.janela)
+        self.frame.pack()
+        destaque = Label(self.frame, text="Controle dos alunos")
+        destaque.grid(columnspan=4, row=0, padx=100, pady=20)
+        cadastro = Button(self.frame, text="Cadastro de Aluno", command=alunos.cadastro)
+        cadastro.grid(column=0, row=1, pady=10)
+        pesquisa = Button(self.frame, text="Pesquisar cadastro", command=alunos.pesquisa)
+        pesquisa.grid(column=1, row=1, pady=10)
+        exibir = Button(self.frame, text="Exibir cadastros", command=alunos.exibir)
+        exibir.grid(column=2, row=1, pady=10)
+        retirar = Button(self.frame, text="Retirar cadastro", command=alunos.retirar)
+        retirar.grid(column=3, row=1, pady=10)
+    def destroy(self):
+        self.frame2.destroy()
+        self.frame2 = Frame(self.janela)
+        self.frame2.pack()
+        self.frame3.destroy()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
+    def cadastro(self):
+        alunos.destroy()
+        destaque = Label(self.frame2,text="Novo cadastro de aluno")
+        destaque.grid(columnspan=2, row=0)
+        name_t = Label(self.frame2, text="Nome:")
+        name_t.grid(column=0, row=1)
+        name = Entry(self.frame2)
+        name.grid(column=1, row=1)
+        user_t = Label(self.frame2, text="Login:")
+        user_t.grid(column=0, row=2)
+        user = Entry(self.frame2)
+        user.grid(column=1, row=2)
+        password_t = Label(self.frame2, text="Senha:")
+        password_t.grid(column=0, row=3)
+        password = Entry(self.frame2)
+        password.grid(column=1, row=3)
+        confirmation_t = Label(self.frame2, text="Confirmar senha:")
+        confirmation_t.grid(column=0, row=4)
+        confirmation = Entry(self.frame2)
+        confirmation.grid(column=1,row=4)
+        submmit = Button(self.frame2, text="Enviar", command=lambda: alunos.cad_aluno(name.get(), user.get(), password.get(), confirmation.get()))
+        submmit.grid(columnspan=2, row= 5)
+    def cad_aluno(self, name, user, password, confirmation):
+        print(name, user, password, confirmation)
+    def pesquisa(self):
+        pass
+    def exibir(self):
+        pass
+    def retirar(self):
+        pass
 
 base = Tk()
 base.title('Biblioteca')
 base.geometry('800x500')
 inicio = Janelas(base)
 livros = Livros(base)
+alunos = Alunos(base)
 inicio.menu()
 base.mainloop()
