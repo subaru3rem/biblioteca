@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import mysql.connector
 cnxn = mysql.connector.connect(
-  host="192.168.10.13",
+  host="localhost",
   user="root",
   password="",
   database='biblioteca')
