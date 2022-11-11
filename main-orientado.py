@@ -1,13 +1,14 @@
 from cgitb import text
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
+from tkcalendar import DateEntry
 import mysql.connector
-cnxn = mysql.connector.connect(
+mydb = mysql.connector.connect(
   host="localhost",
   user="root",
   password="",
   database='biblioteca')
-cursor = cnxn.cursor()
+cursor = mydb.cursor()
 class Janelas():
     def __init__(self, base):
         self.janela = base
@@ -74,22 +75,22 @@ class Livros():
     def cad_livro(self):
     #itens janela
         livros.destroy()
-        textoD = Label(self.frame2, text='NOVO CADASTRO')
-        textoD.grid(columnspan=2, row=0)
-        texto1 = Label(self.frame2, text='Nome')
-        texto1.grid(column=0,row=1,pady=10)
+        destaque = Label(self.frame2, text='NOVO CADASTRO')
+        destaque.grid(columnspan=2, row=0)
+        nome_t = Label(self.frame2, text='Nome')
+        nome_t.grid(column=0,row=1,pady=10)
         nome = Entry(self.frame2, width=40)
         nome.grid(column=1, row=1, pady=10)
-        texto2 = Label(self.frame2, text='Autor')
-        texto2.grid(column=0,row=2,pady=10)
-        texto3 = Label(self.frame2, text='Gênero')
-        texto3.grid(column=0,row=3,pady=10)
-        texto4 = Label(self.frame2, text='Quantidade de Livros')
-        texto4.grid(column=0,row=4,pady=10)
-        texto5 = Label(self.frame2, text='Prateleira do Livro')
-        texto5.grid(column=0,row=5,pady=10)
-        texto6 = Label(self.frame2, text='Código')
-        texto6.grid(column=0,row=6,pady=10)
+        autor_t = Label(self.frame2, text='Autor')
+        autor_t.grid(column=0,row=2,pady=10)
+        genero_t = Label(self.frame2, text='Gênero')
+        genero_t.grid(column=0,row=3,pady=10)
+        quantidade_t = Label(self.frame2, text='Quantidade de Livros')
+        quantidade_t.grid(column=0,row=4,pady=10)
+        prateleira = Label(self.frame2, text='Prateleira do Livro')
+        prateleira.grid(column=0,row=5,pady=10)
+        codigo_t = Label(self.frame2, text='Código')
+        codigo_t.grid(column=0,row=6,pady=10)
         autor = Entry(self.frame2, width=40)
         autor.grid(column=1, row=2, pady=10)
         genero = Entry(self.frame2, width=40)
@@ -100,12 +101,12 @@ class Livros():
         prateleira.grid(column=1, row=5, pady=10)
         codigo = Entry(self.frame2, width=40)
         codigo.grid(column=1, row=6, pady=10)
-        botão1 = Button(self.frame2, text='Enviar', command=lambda:livros.enviar_banco(nome.get(), autor.get(), genero.get(), quantidade.get(), prateleira.get(), codigo.get()))
-        botão1.grid(columnspan=2, row=7, pady=10)
+        submit = Button(self.frame2, text='Enviar', command=lambda:livros.enviar_banco(nome.get(), autor.get(), genero.get(), quantidade.get(), prateleira.get(), codigo.get()))
+        submit.grid(columnspan=2, row=7, pady=10)
     def enviar_banco(self,nome,autor,genero,quantidade,prateleira,codigo):
         cursor.execute(f"""INSERT INTO livros
         VALUES ('{nome}','{autor}','{genero}',{quantidade},'{prateleira}',{codigo})""")
-        cnxn.commit()
+        mydb.commit()
         livros.cad_livro()
     def exibir_livros(self):
         livros.destroy()
@@ -181,7 +182,7 @@ class Livros():
              botão.pack() 
     def deletar(self,livro,quantidade):
         cursor.execute(f'UPDATE livros SET quantidade=quantidade-{quantidade} WHERE titulo="{livro}"')
-        cnxn.commit()
+        mydb.commit()
         livros.retirar_livro()
 class Alunos():
     def __init__(self,base):
@@ -215,28 +216,85 @@ class Alunos():
         self.frame3.pack()
     def cadastro(self):
         alunos.destroy()
-        destaque = Label(self.frame2,text="Novo cadastro de aluno")
+        destaque = Label(self.frame2,text="novo cadastro de aluno".capitalize())
         destaque.grid(columnspan=2, row=0)
         name_t = Label(self.frame2, text="Nome:")
-        name_t.grid(column=0, row=1)
-        name = Entry(self.frame2)
+        name_t.grid(column=0, row=1, pady=10)
+        name = Entry(self.frame2, width=40)
         name.grid(column=1, row=1)
         user_t = Label(self.frame2, text="Login:")
-        user_t.grid(column=0, row=2)
-        user = Entry(self.frame2)
+        user_t.grid(column=0, row=2, pady=10)
+        user = Entry(self.frame2, width=40)
         user.grid(column=1, row=2)
         password_t = Label(self.frame2, text="Senha:")
-        password_t.grid(column=0, row=3)
-        password = Entry(self.frame2)
+        password_t.grid(column=0, row=3, pady=10)
+        password = Entry(self.frame2, width=40, show='*')
         password.grid(column=1, row=3)
         confirmation_t = Label(self.frame2, text="Confirmar senha:")
-        confirmation_t.grid(column=0, row=4)
-        confirmation = Entry(self.frame2)
+        confirmation_t.grid(column=0, row=4, pady=10)
+        confirmation = Entry(self.frame2, width=40, show='*')
         confirmation.grid(column=1,row=4)
-        submmit = Button(self.frame2, text="Enviar", command=lambda: alunos.cad_aluno(name.get(), user.get(), password.get(), confirmation.get()))
-        submmit.grid(columnspan=2, row= 5)
-    def cad_aluno(self, name, user, password, confirmation):
-        print(name, user, password, confirmation)
+        dados = {"name":name.get(), "user":user.get(), "password":password.get(), "confirmation": confirmation.get()}
+        submmit = Button(self.frame2, text="Enviar", command=lambda: alunos.verificação(dados))
+        submmit.grid(columnspan=2, row= 5, pady=10)
+    def verificação(self,dados):
+        if dados["password"] == dados["confirmation"]:
+            alunos.finalizar_cad(dados)
+        else:
+            alerta = Label(self.frame3, text="Senhas não correspondentes", fg="red")
+            alerta.pack()
+    def finalizar_cad(self, dados):
+        alunos.destroy()
+        destaque = Label(self.frame2, text="finalizar cadastro".capitalize())
+        destaque.grid(columnspan=4, row=0, pady=10)
+
+        turma_t = Label(self.frame2, text="Turma: ")
+        turma_t.grid(column=0, row=1, pady=10)
+        turma = Entry(self.frame2, width=10)
+        turma.grid(column=1, row=1)
+        turno_t = Label(self.frame2, text="Turno: ")
+        turno_t.grid(column=2, row=1, pady=10)
+        turno = Entry(self.frame2, width=15)
+        turno.grid(column=3, row=1)
+
+        matricula_t = Label(self.frame2, text="Matricula: ")
+        matricula_t.grid(column=0, row=2, pady=10)
+        matricula = Entry(self.frame2, width=25)
+        matricula.grid(column=1, row=2)
+        cep_t = Label(self.frame2, text="CEP ")
+        cep_t.grid(column=2, row=2)
+        cep = Entry(self.frame2, width=15)
+        cep.grid(column=3, row=2)
+
+        responsavel_t = Label(self.frame2, text="Responsavel ")
+        responsavel_t.grid(column=0, row=3, pady=10)
+        responsavel = Entry(self.frame2, width=25)
+        responsavel.grid(column=1, row=3)
+        celular_t = Label(self.frame2, text="Celular/Telefone ")
+        celular_t.grid(column=2, row=3, pady=10)
+        celular = Entry(self.frame2, width=15)
+        celular.grid(column=3, row=3)
+        
+        email_t = Label(self.frame2, text="Email:")
+        email_t.grid(column=0, row=4, pady=10)
+        email = Entry(self.frame2, width=25)
+        email.grid(column=1, row=4)
+        data_n_t = Label(self.frame2, text=" Data de nascimento ")
+        data_n_t.grid(column=2, row=4, pady=10)
+        data_n = DateEntry(self.frame2,selectmode='day', width=15)
+        data_n.grid(column=3, row=4)
+
+        dados2 = {
+            "turma":turma.get(),"turno":turno.get(),"matricula":matricula.get(),"cep":cep.get(),"responsavel":responsavel.get(),"celular":celular.get(),"email":email.get(),"data_n":data_n.get()
+        }
+        dados.update(dados2)
+
+        submit = Button(self.frame2, text="Enviar", command=lambda:alunos.banco(dados))
+        submit.grid(columnspan=4, row=5)      
+    def banco(self, dados):
+        cursor.execute(f"insert into alunos values('{dados['user']}','{dados['name']}', '{dados['password']}')")
+        mydb.commit()
+        alunos.cadastro()
     def pesquisa(self):
         pass
     def exibir(self):
