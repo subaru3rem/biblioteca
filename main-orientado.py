@@ -2,6 +2,7 @@ from cgitb import text
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 from tkcalendar import DateEntry
+import re
 import mysql.connector
 mydb = mysql.connector.connect(
   host="localhost",
@@ -121,14 +122,16 @@ class Livros():
         scroll_bar.config( command = canvas.yview )
         internal_frame = Frame(canvas)
         canvas.create_window((0, 0), window=internal_frame, anchor='nw')
-        canvas.config(scrollregion=canvas.bbox("all"))
+        
         for i in rs:
-          livros_exibir = Label(internal_frame, text=f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n')
+          livros_exibir = Label(internal_frame, justify='left',text=f'Titulo: {i[0]}\nAutor: {i[1]}\nGênero: {i[2]}\nQuantia de livros: {i[3]}\n\n')
           livros_exibir.grid(column=Column, row=Row, padx=10)
           Column += 1
           if Column == 3:
             Column = 0
             Row += 1
+        internal_frame.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox("all"))
     def pesquisar_livros(self):
         #itens janela
         livros.destroy()
@@ -193,6 +196,8 @@ class Alunos():
         self.frame2.pack()
         self.frame3 = Frame(self.janela)
         self.frame3.pack()
+        self.frame4 = Frame(self.frame3)
+        self.frame4.grid(row=1, column=0)
     def alunos(self):
         self.frame.destroy()
         self.frame = Frame(self.janela)
@@ -234,13 +239,15 @@ class Alunos():
         confirmation_t.grid(column=0, row=4, pady=10)
         confirmation = Entry(self.frame2, width=40, show='*')
         confirmation.grid(column=1,row=4)
-        dados = {"name":name.get(), "user":user.get(), "password":password.get(), "confirmation": confirmation.get()}
-        submmit = Button(self.frame2, text="Enviar", command=lambda: alunos.verificação(dados))
-        submmit.grid(columnspan=2, row= 5, pady=10)
+        submmit = Button(self.frame2, text="Enviar", command=lambda:alunos.verificação({"name":name.get(), "user":user.get(), "password":password.get(), "confirmation": confirmation.get()}))
+        submmit.grid(columnspan=2, row= 5, pady=10)       
     def verificação(self,dados):
         if dados["password"] == dados["confirmation"]:
             alunos.finalizar_cad(dados)
         else:
+            self.frame3.destroy()
+            self.frame3 = Frame(self.janela)
+            self.frame3.pack()
             alerta = Label(self.frame3, text="Senhas não correspondentes", fg="red")
             alerta.pack()
     def finalizar_cad(self, dados):
@@ -281,26 +288,128 @@ class Alunos():
         email.grid(column=1, row=4)
         data_n_t = Label(self.frame2, text=" Data de nascimento ")
         data_n_t.grid(column=2, row=4, pady=10)
-        data_n = DateEntry(self.frame2,selectmode='day', width=15)
+        data_n = DateEntry(self.frame2,selectmode='day',date_pattern='yyyy-mm-dd', width=15)
         data_n.grid(column=3, row=4)
 
-        dados2 = {
+        submit = Button(self.frame2, text="Enviar", command=lambda:alunos.banco(dados, {
             "turma":turma.get(),"turno":turno.get(),"matricula":matricula.get(),"cep":cep.get(),"responsavel":responsavel.get(),"celular":celular.get(),"email":email.get(),"data_n":data_n.get()
-        }
-        dados.update(dados2)
-
-        submit = Button(self.frame2, text="Enviar", command=lambda:alunos.banco(dados))
+        }))
         submit.grid(columnspan=4, row=5)      
-    def banco(self, dados):
-        cursor.execute(f"insert into alunos values('{dados['user']}','{dados['name']}', '{dados['password']}')")
+    def banco(self, dados, info_user):
+        info_user['data_n'] = re.sub("/","-", info_user['data_n'])
+        cursor.execute(f"insert into alunos values('{dados['user']}', '{dados['password']}')")
+        cursor.execute(f"insert into info_alunos values('{dados['user']}','{dados['name'].capitalize()}','{info_user['turma']}','{info_user['matricula']}','{info_user['responsavel'].capitalize()}','{info_user['email']}','{info_user['turno']}','{info_user['cep']}','{info_user['celular']}','{info_user['data_n']}')")
         mydb.commit()
         alunos.cadastro()
     def pesquisa(self):
-        pass
+        alunos.destroy()
+        pesquisa_t = Label(self.frame2, text="Digite o nome ou o login de um aluno:")
+        pesquisa_t.pack(pady=10)
+        pesquisa = Entry(self.frame2, width=60)
+        pesquisa.pack(pady=10)
+        submit = Button(self.frame2, text="enviar".capitalize(), command=lambda: event(0))
+        submit.pack(pady=10) 
+        def event(event):
+            confirmação = alunos.select(pesquisa.get())
+            if confirmação:
+                canvas = Canvas(self.frame3)
+                canvas.grid(row=0, column=0, sticky='news')
+                internal_frame = Frame(canvas)
+                canvas.create_window((0, 0), window=internal_frame, anchor="n")
+                scroll_bar = Scrollbar(self.frame3, orient=VERTICAL, command=canvas.yview)
+                scroll_bar.grid(row=0, column=1, sticky='ns')
+                canvas.config(yscrollcommand=scroll_bar.set) 
+                for i in confirmação:
+                    aluno = Label(internal_frame, justify='left',text=f"""login: {i[0]}\nnome: {i[1]}\nturma: {i[2]}\nmartricula: {i[3]}\nresponsavel: {i[4]}\nemail: {i[5]}\nturno: {i[6]}\ncep: {i[7]}\ncelular: {i[8]}\ndata de nascimento: {i[9]}""")
+                    aluno.pack(pady=10)
+                internal_frame.update_idletasks()
+                canvas.configure(scrollregion = canvas.bbox("all"))
+            else:
+                alerta = Label(self.frame2, text="Aluno não encontrado")
+                alerta.pack(pady=10)
+        pesquisa.bind('<Return>', event)
+    def select(self, pesquisa):
+        cursor.execute(f"select * from info_alunos where name like '{pesquisa}%' or user like '{pesquisa}%'")
+        return cursor.fetchall()
     def exibir(self):
-        pass
+        alunos.destroy()
+        #canva
+        canvas = Canvas(self.frame3)
+        canvas.grid(row=0, column=0, sticky='news')
+        internal_frame = Frame(canvas)
+        canvas.create_window((0, 0), window=internal_frame, anchor="n")
+        scroll_bar = Scrollbar(self.frame3, orient=VERTICAL, command=canvas.yview)
+        scroll_bar.grid(row=0, column=1, sticky='ns')
+        canvas.config(yscrollcommand=scroll_bar.set)
+        #banco
+        cursor.execute("select * from info_alunos")
+        geral = cursor.fetchall()
+        row, column = 0,0
+        for i in geral:
+            aluno = Label(internal_frame,justify='left', width=25,anchor="w",text=f"""login: {i[0]}\nnome: {i[1]}\nturma: {i[2]}\nmartricula: {i[3]}\nresponsavel: {i[4]}\nemail: {i[5]}\nturno: {i[6]}\ncep: {i[7]}\ncelular: {i[8]}\ndata de nascimento: {i[9]}""")
+            aluno.grid(column = column, row=row, padx=5, pady=5)
+            if column==1:
+                column = 0
+                row += 1
+            else:
+                column += 1
+        #canva
+        internal_frame.update_idletasks()
+        canvas.configure(scrollregion = canvas.bbox("all"))
     def retirar(self):
-        pass
+        alunos.destroy()
+        pesquisa_t = Label(self.frame2, text="Digite o nome ou o login de um aluno:")
+        pesquisa_t.pack(pady=10)
+        pesquisa = Entry(self.frame2, width=40)
+        pesquisa.pack(pady=10)
+        submit = Button(self.frame2, text="enviar".capitalize(), command=lambda: event(0))
+        submit.pack(pady=10) 
+        def confirmar(aluno):
+            self.frame4.destroy()
+            self.frame4 = Frame(self.frame3)
+            self.frame4.grid(row=1, column=0)
+            aluno_t = Label(self.frame4, justify='left', text=f"login: {aluno['login']}\nnome: {aluno['nome']}\nturma: {aluno['turma']}")
+            aluno_t.pack(side='left', padx=10)
+            frame_temporario = Frame(self.frame4)
+            frame_temporario.pack(side='left')
+            confirmacao = Label(frame_temporario, text='Deseja excluir\n esse aluno?')
+            confirmacao.grid(row=0, columnspan=2)
+            sim = Button(frame_temporario, text="sim", command=lambda:alunos.excluir(aluno))
+            sim.grid(row=1, column=0)
+            nao = Button(frame_temporario, text='não', command=lambda:event(0))
+            nao.grid(row=1,column=1)
+        def event(event):
+            Alunos = alunos.select(pesquisa.get())
+            self.frame3.destroy()
+            self.frame3 = Frame(self.janela)
+            self.frame3.pack()
+            if Alunos:
+                canvas = Canvas(self.frame3, height=80)
+                canvas.grid(row=0, column=0, sticky='news')
+                internal_frame = Frame(canvas)
+                canvas.create_window((0, 0), window=internal_frame, anchor="n")
+                scroll_bar = Scrollbar(self.frame3, orient=VERTICAL, command=canvas.yview)
+                scroll_bar.grid(row=0, column=1, sticky='ns')
+                canvas.config(yscrollcommand=scroll_bar.set) 
+                for i in Alunos:
+                    aluno = Button(internal_frame, justify='left',text=f"login: {i[0]}\nnome: {i[1]}\nturma: {i[2]}", command= lambda: confirmar({'login': i[0],'nome': i[1],'turma': i[2]}))
+                    aluno.pack(pady=10)
+                internal_frame.update_idletasks()
+                canvas.configure(scrollregion = canvas.bbox("all"))
+            else:
+                alerta = Label(self.frame3, text="Aluno não encontrado")
+                alerta.pack(pady=10)
+        pesquisa.bind('<Return>', event)
+    def excluir(self,aluno):
+        cursor.execute(f"delete from info_alunos where user='{aluno['login']}' and name='{aluno['nome']}'")
+        cursor.execute(f"delete from alunos where user='{aluno['login']}'")
+        mydb.commit()
+        self.frame3.destroy()
+        self.frame3 = Frame(self.janela)
+        self.frame3.pack()
+        alerta = Label(self.frame3, text="Aluno excluido")
+        alerta.pack()
+        self.janela.after(1500, alunos.retirar)
 
 base = Tk()
 base.title('Biblioteca')
